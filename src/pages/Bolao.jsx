@@ -1,22 +1,8 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
+import Bandeira from '../components/Bandeira'
 
-const BANDEIRAS = {
-  MEX: '🇲🇽', RSA: '🇿🇦', KOR: '🇰🇷', CZE: '🇨🇿',
-  CAN: '🇨🇦', BIH: '🇧🇦', QAT: '🇶🇦', SUI: '🇨🇭',
-  BRA: '🇧🇷', MAR: '🇲🇦', HAI: '🇭🇹', SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-  USA: '🇺🇸', PAR: '🇵🇾', AUS: '🇦🇺', TUR: '🇹🇷',
-  GER: '🇩🇪', CUW: '🇨🇼', CIV: '🇨🇮', ECU: '🇪🇨',
-  NED: '🇳🇱', JPN: '🇯🇵', SWE: '🇸🇪', TUN: '🇹🇳',
-  BEL: '🇧🇪', EGY: '🇪🇬', IRN: '🇮🇷', NZL: '🇳🇿',
-  ESP: '🇪🇸', CPV: '🇨🇻', KSA: '🇸🇦', URU: '🇺🇾',
-  FRA: '🇫🇷', SEN: '🇸🇳', IRQ: '🇮🇶', NOR: '🇳🇴',
-  ARG: '🇦🇷', ALG: '🇩🇿', AUT: '🇦🇹', JOR: '🇯🇴',
-  POR: '🇵🇹', COD: '🇨🇩', UZB: '🇺🇿', COL: '🇨🇴',
-  ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', CRO: '🇭🇷', GHA: '🇬🇭', PAN: '🇵🇦',
-}
-
-const DEADLINE_BONUS = new Date('2026-06-14T23:59:00')
+const DEADLINE_BONUS = new Date('2026-06-14T23:59:00-03:00')
 const FASES_BRASIL = ['GRUPOS', 'DEZASSEIS', 'OITAVAS', 'QUARTAS', 'SEMI', 'FINAL', 'CAMPEAO']
 
 function formatDate(iso) {
@@ -27,12 +13,8 @@ function formatDate(iso) {
 }
 
 function isAberta(partida) {
-  const deadline = new Date(partida.dataHora) - 60 * 60 * 1000
+  const deadline = new Date(partida.dataHora).getTime() - 60 * 60 * 1000
   return !partida.encerrada && Date.now() < deadline
-}
-
-function getPlacarPalpite(palpites, partidaId) {
-  return palpites.find(p => p.partida?.id === partidaId)
 }
 
 function PalpiteCard({ partida, palpite, onSalvar }) {
@@ -74,13 +56,11 @@ function PalpiteCard({ partida, palpite, onSalvar }) {
   return (
     <div className={`bg-gray-900 rounded-xl border p-4 ${aberta ? 'border-gray-700' : 'border-gray-800 opacity-70'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
-        {/* Casa */}
-        <div className="flex-1 text-right">
-          <span className="text-xl">{BANDEIRAS[casa.codigoFifa] || '🏳️'}</span>
-          <p className="text-xs text-gray-300 mt-0.5">{casa.nome}</p>
+        <div className="flex-1 flex flex-col items-center gap-1 text-center">
+          <Bandeira codigo={casa.codigoFifa} size={28} />
+          <p className="text-xs text-gray-300 leading-tight">{casa.nome}</p>
         </div>
 
-        {/* Inputs */}
         <div className="flex items-center gap-2">
           <input
             type="number" min="0" max="20"
@@ -89,7 +69,7 @@ function PalpiteCard({ partida, palpite, onSalvar }) {
             disabled={!aberta}
             className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 disabled:opacity-40"
           />
-          <span className="text-gray-500 font-bold">×</span>
+          <span className="text-gray-500 font-bold text-lg">×</span>
           <input
             type="number" min="0" max="20"
             value={gols.vis}
@@ -99,10 +79,9 @@ function PalpiteCard({ partida, palpite, onSalvar }) {
           />
         </div>
 
-        {/* Visitante */}
-        <div className="flex-1 text-left">
-          <span className="text-xl">{BANDEIRAS[vis.codigoFifa] || '🏳️'}</span>
-          <p className="text-xs text-gray-300 mt-0.5">{vis.nome}</p>
+        <div className="flex-1 flex flex-col items-center gap-1 text-center">
+          <Bandeira codigo={vis.codigoFifa} size={28} />
+          <p className="text-xs text-gray-300 leading-tight">{vis.nome}</p>
         </div>
       </div>
 
@@ -134,7 +113,6 @@ function PalpiteCard({ partida, palpite, onSalvar }) {
 export default function Bolao() {
   const [partidas, setPartidas] = useState([])
   const [palpites, setPalpites] = useState([])
-  const [bonus, setBonus] = useState(null)
   const [selecoes, setSelecoes] = useState([])
   const [bonusForm, setBonusForm] = useState({
     campeao: '', neymarGol: '', artilheiro: '', brasilFase: ''
@@ -156,7 +134,6 @@ export default function Bolao() {
       setPartidas(partRes.data)
       setSelecoes(selRes.data)
       if (bRes.data) {
-        setBonus(bRes.data)
         setBonusForm({
           campeao: bRes.data.campeao || '',
           neymarGol: bRes.data.neymarGol != null ? String(bRes.data.neymarGol) : '',
@@ -185,7 +162,7 @@ export default function Bolao() {
       })
       setBonusMsg('✅ Palpites bônus salvos!')
       loadData()
-    } catch (err) {
+    } catch {
       setBonusMsg('❌ Erro ao salvar')
     } finally {
       setSavingBonus(false)
@@ -208,21 +185,21 @@ export default function Bolao() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-white">Meu Bolão</h1>
-        <p className="text-gray-400 mt-1">Faça seus palpites até 1h antes de cada jogo</p>
+        <p className="text-gray-400 mt-1">Palpites fecham 1h antes de cada jogo</p>
       </div>
 
-      {/* ── PALPITES BÔNUS ── */}
+      {/* BÔNUS */}
       <div className="bg-gray-900 rounded-2xl border border-yellow-500/30 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start justify-between mb-4 gap-4">
           <div>
             <h2 className="text-xl font-bold text-white">🌟 Palpites Bônus</h2>
             <p className="text-sm text-gray-400 mt-0.5">
               {bonusAberto
-                ? `Prazo: 14/06/2026 23:59`
-                : 'Prazo encerrado'}
+                ? 'Prazo: 14/06/2026 às 23:59'
+                : '⛔ Prazo encerrado em 14/06/2026'}
             </p>
           </div>
-          <div className="text-right text-xs text-gray-500 space-y-0.5">
+          <div className="text-right text-xs text-gray-500 space-y-0.5 shrink-0">
             <div>🏆 Campeão = 25 pts</div>
             <div>⚽ Neymar gol = 10 pts</div>
             <div>👟 Artilheiro = 25 pts</div>
@@ -241,13 +218,13 @@ export default function Bolao() {
             >
               <option value="">Selecione...</option>
               {selecoes.sort((a, b) => a.nome.localeCompare(b.nome)).map(s => (
-                <option key={s.id} value={s.nome}>{BANDEIRAS[s.codigoFifa]} {s.nome}</option>
+                <option key={s.id} value={s.nome}>{s.nome}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol?</label>
+            <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol na Copa?</label>
             <select
               value={bonusForm.neymarGol}
               onChange={e => setBonusForm({ ...bonusForm, neymarGol: e.target.value })}
@@ -300,11 +277,9 @@ export default function Bolao() {
         )}
       </div>
 
-      {/* ── PARTIDAS ABERTAS ── */}
+      {/* ABERTAS */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">
-          ⚽ Partidas Abertas ({abertas.length})
-        </h2>
+        <h2 className="text-xl font-bold text-white mb-4">⚽ Partidas Abertas ({abertas.length})</h2>
         {abertas.length === 0 ? (
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
             <p className="text-3xl mb-2">🔒</p>
@@ -313,28 +288,18 @@ export default function Bolao() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {abertas.map(p => (
-              <PalpiteCard
-                key={p.id}
-                partida={p}
-                palpite={getPlacarPalpite(palpites, p.id)}
-                onSalvar={loadData}
-              />
+              <PalpiteCard key={p.id} partida={p} palpite={palpites.find(x => x.partida?.id === p.id)} onSalvar={loadData} />
             ))}
           </div>
         )}
       </div>
 
-      {/* ── HISTÓRICO ── */}
       {comPalpites.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-white mb-4">📋 Meus Palpites</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {comPalpites.map(p => (
-              <PalpiteCard
-                key={p.id}
-                partida={p}
-                palpite={getPlacarPalpite(palpites, p.id)}
-              />
+              <PalpiteCard key={p.id} partida={p} palpite={palpites.find(x => x.partida?.id === p.id)} />
             ))}
           </div>
         </div>

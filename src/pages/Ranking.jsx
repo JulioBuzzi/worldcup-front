@@ -11,7 +11,13 @@ export default function Ranking() {
 
   useEffect(() => {
     api.get('/ranking')
-      .then(r => setRanking(r.data))
+      .then(r => {
+        // Filtrar admin do ranking
+        const semAdmin = r.data.filter(u => u.role !== 'ADMIN' && u.nome !== 'Admin')
+        // Renumerar posições
+        const renum = semAdmin.map((u, i) => ({ ...u, posicao: i + 1 }))
+        setRanking(renum)
+      })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
@@ -36,7 +42,6 @@ export default function Ranking() {
         </div>
       ) : (
         <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-          {/* Header */}
           <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-gray-800 text-xs font-semibold text-gray-400 uppercase tracking-wider">
             <div className="col-span-1 text-center">#</div>
             <div className="col-span-5">Jogador</div>
@@ -46,7 +51,7 @@ export default function Ranking() {
           </div>
 
           {ranking.map((r, i) => {
-            const isMe = user?.email && r.nome === user.nome
+            const isMe = user?.nome === r.nome
             return (
               <div
                 key={r.usuarioId}
@@ -88,7 +93,6 @@ export default function Ranking() {
         </div>
       )}
 
-      {/* Legenda */}
       <div className="mt-6 bg-gray-900 rounded-xl border border-gray-800 p-4">
         <h3 className="text-sm font-semibold text-gray-300 mb-3">Tabela de Pontuação</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-gray-400">

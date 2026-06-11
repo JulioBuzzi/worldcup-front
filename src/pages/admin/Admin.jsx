@@ -1,23 +1,8 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
-
-const BANDEIRAS = {
-  MEX: '🇲🇽', RSA: '🇿🇦', KOR: '🇰🇷', CZE: '🇨🇿',
-  CAN: '🇨🇦', BIH: '🇧🇦', QAT: '🇶🇦', SUI: '🇨🇭',
-  BRA: '🇧🇷', MAR: '🇲🇦', HAI: '🇭🇹', SCO: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-  USA: '🇺🇸', PAR: '🇵🇾', AUS: '🇦🇺', TUR: '🇹🇷',
-  GER: '🇩🇪', CUW: '🇨🇼', CIV: '🇨🇮', ECU: '🇪🇨',
-  NED: '🇳🇱', JPN: '🇯🇵', SWE: '🇸🇪', TUN: '🇹🇳',
-  BEL: '🇧🇪', EGY: '🇪🇬', IRN: '🇮🇷', NZL: '🇳🇿',
-  ESP: '🇪🇸', CPV: '🇨🇻', KSA: '🇸🇦', URU: '🇺🇾',
-  FRA: '🇫🇷', SEN: '🇸🇳', IRQ: '🇮🇶', NOR: '🇳🇴',
-  ARG: '🇦🇷', ALG: '🇩🇿', AUT: '🇦🇹', JOR: '🇯🇴',
-  POR: '🇵🇹', COD: '🇨🇩', UZB: '🇺🇿', COL: '🇨🇴',
-  ENG: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', CRO: '🇭🇷', GHA: '🇬🇭', PAN: '🇵🇦',
-}
+import Bandeira from '../../components/Bandeira'
 
 const FASES = ['GRUPOS', 'DEZASSEIS', 'OITAVAS', 'QUARTAS', 'SEMI', 'TERCEIRO_LUGAR', 'FINAL']
-
 const TABS = ['Partidas', 'Placar', 'Bônus']
 
 export default function Admin() {
@@ -27,31 +12,44 @@ export default function Admin() {
   const [bonus, setBonus] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Criar partida
   const [novaPartida, setNovaPartida] = useState({
-    selecaoCasaId: '', selecaoVisitanteId: '',
-    fase: 'GRUPOS', dataHora: '', rodada: ''
+    selecaoCasaId: '', selecaoVisitanteId: '', fase: 'GRUPOS', dataHora: '', rodada: ''
   })
   const [msgPartida, setMsgPartida] = useState('')
-
-  // Placar
   const [placar, setPlacar] = useState({})
   const [msgPlacar, setMsgPlacar] = useState({})
-
-  // Bônus
   const [msgBonus, setMsgBonus] = useState({})
+  const [correcoes, setCorrecoes] = useState({})
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/selecoes'),
-      api.get('/partidas'),
-      api.get('/admin/bonus')
-    ]).then(([s, p, b]) => {
+  const loadAll = async () => {
+    try {
+      const [s, p, b] = await Promise.all([
+        api.get('/selecoes'),
+        api.get('/partidas'),
+        api.get('/admin/bonus')
+      ])
       setSelecoes(s.data)
       setPartidas(p.data)
       setBonus(b.data)
-    }).catch(console.error).finally(() => setLoading(false))
-  }, [])
+      // Inicializar correções
+      const init = {}
+      b.data.forEach(bx => {
+        init[bx.id] = {
+          campeaoAcertou: bx.campeaoAcertou ?? false,
+          neymarGolAcertou: bx.neymarGolAcertou ?? false,
+          artilheiroAcertou: bx.artilheiroAcertou ?? false,
+          brasilFaseAcertou: bx.brasilFaseAcertou ?? false,
+        }
+      })
+      setCorrecoes(init)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadAll() }, [])
 
   const criarPartida = async () => {
     try {
@@ -61,8 +59,7 @@ export default function Admin() {
         dataHora: new Date(novaPartida.dataHora).toISOString()
       })
       setMsgPartida('✅ Partida criada!')
-      const { data } = await api.get('/partidas')
-      setPartidas(data)
+      await loadAll()
       setNovaPartida({ selecaoCasaId: '', selecaoVisitanteId: '', fase: 'GRUPOS', dataHora: '', rodada: '' })
     } catch (err) {
       setMsgPartida('❌ ' + (err.response?.data?.message || 'Erro'))
@@ -72,31 +69,28 @@ export default function Admin() {
 
   const atualizarPlacar = async (id) => {
     const p = placar[id] || {}
+    const partida = partidas.find(x => x.id === id)
     try {
       await api.put(`/admin/partidas/${id}/placar`, {
-        golsCasa: Number(p.golsCasa ?? 0),
-        golsVisitante: Number(p.golsVisitante ?? 0),
-        encerrada: p.encerrada ?? false
+        golsCasa: Number(p.golsCasa ?? partida?.golsCasa ?? 0),
+        golsVisitante: Number(p.golsVisitante ?? partida?.golsVisitante ?? 0),
+        encerrada: p.encerrada ?? partida?.encerrada ?? false
       })
       setMsgPlacar(prev => ({ ...prev, [id]: '✅ Atualizado!' }))
-      const { data } = await api.get('/partidas')
-      setPartidas(data)
-    } catch (err) {
+      await loadAll()
+    } catch {
       setMsgPlacar(prev => ({ ...prev, [id]: '❌ Erro' }))
     }
     setTimeout(() => setMsgPlacar(prev => ({ ...prev, [id]: '' })), 3000)
   }
 
-  const corrigirBonus = async (b, correcoesLocal) => {
+  const corrigirBonus = async (b) => {
+    const corr = correcoes[b.id] || {}
     try {
-      await api.put('/admin/bonus/corrigir', {
-        usuarioId: b.usuario.id,
-        ...correcoesLocal
-      })
+      await api.put('/admin/bonus/corrigir', { usuarioId: b.usuario.id, ...corr })
       setMsgBonus(prev => ({ ...prev, [b.id]: '✅ Salvo!' }))
-      const { data } = await api.get('/admin/bonus')
-      setBonus(data)
-    } catch (err) {
+      await loadAll()
+    } catch {
       setMsgBonus(prev => ({ ...prev, [b.id]: '❌ Erro' }))
     }
     setTimeout(() => setMsgBonus(prev => ({ ...prev, [b.id]: '' })), 3000)
@@ -115,22 +109,16 @@ export default function Admin() {
         <p className="text-gray-400 mt-1">Gerenciamento do bolão</p>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-6">
         {TABS.map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
+          <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               tab === t ? 'bg-yellow-500 text-gray-900' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
-          >
-            {t}
-          </button>
+            }`}>{t}</button>
         ))}
       </div>
 
-      {/* ── CRIAR PARTIDA ── */}
+      {/* CRIAR PARTIDA */}
       {tab === 'Partidas' && (
         <div className="space-y-4">
           <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
@@ -138,83 +126,66 @@ export default function Admin() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Mandante</label>
-                <select
-                  value={novaPartida.selecaoCasaId}
+                <select value={novaPartida.selecaoCasaId}
                   onChange={e => setNovaPartida({ ...novaPartida, selecaoCasaId: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
-                >
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
                   <option value="">Selecione...</option>
                   {selecoes.sort((a, b) => a.nome.localeCompare(b.nome)).map(s => (
-                    <option key={s.id} value={s.id}>{BANDEIRAS[s.codigoFifa]} {s.nome} ({s.grupo})</option>
+                    <option key={s.id} value={s.id}>{s.nome} ({s.grupo})</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Visitante</label>
-                <select
-                  value={novaPartida.selecaoVisitanteId}
+                <select value={novaPartida.selecaoVisitanteId}
                   onChange={e => setNovaPartida({ ...novaPartida, selecaoVisitanteId: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
-                >
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
                   <option value="">Selecione...</option>
                   {selecoes.sort((a, b) => a.nome.localeCompare(b.nome)).map(s => (
-                    <option key={s.id} value={s.id}>{BANDEIRAS[s.codigoFifa]} {s.nome} ({s.grupo})</option>
+                    <option key={s.id} value={s.id}>{s.nome} ({s.grupo})</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Fase</label>
-                <select
-                  value={novaPartida.fase}
+                <select value={novaPartida.fase}
                   onChange={e => setNovaPartida({ ...novaPartida, fase: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
-                >
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500">
                   {FASES.map(f => <option key={f} value={f}>{f}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Data e Hora</label>
-                <input
-                  type="datetime-local"
-                  value={novaPartida.dataHora}
+                <input type="datetime-local" value={novaPartida.dataHora}
                   onChange={e => setNovaPartida({ ...novaPartida, dataHora: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
-                />
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Rodada (opcional)</label>
-                <input
-                  type="number"
-                  value={novaPartida.rodada}
+                <input type="number" value={novaPartida.rodada}
                   onChange={e => setNovaPartida({ ...novaPartida, rodada: e.target.value })}
                   placeholder="Ex: 1"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
-                />
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500" />
               </div>
             </div>
             <div className="flex items-center gap-3 mt-4">
               {msgPartida && <span className="text-sm">{msgPartida}</span>}
-              <button
-                onClick={criarPartida}
-                className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors"
-              >
+              <button onClick={criarPartida}
+                className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors">
                 Criar Partida
               </button>
             </div>
           </div>
-
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-4">
             <p className="text-sm text-gray-400">{partidas.length} partidas cadastradas no total.</p>
           </div>
         </div>
       )}
 
-      {/* ── PLACAR ── */}
+      {/* PLACAR */}
       {tab === 'Placar' && (
         <div className="space-y-3">
-          {partidas.length === 0 && (
-            <p className="text-gray-500 text-center py-10">Nenhuma partida cadastrada.</p>
-          )}
+          {partidas.length === 0 && <p className="text-gray-500 text-center py-10">Nenhuma partida cadastrada.</p>}
           {partidas.map(p => {
             const ph = placar[p.id] || {}
             const casa = p.selecaoCasa
@@ -223,43 +194,37 @@ export default function Admin() {
               <div key={p.id} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white font-medium">
-                      {BANDEIRAS[casa.codigoFifa]} {casa.nome}
-                      <span className="text-gray-500 mx-2">vs</span>
-                      {BANDEIRAS[vis.codigoFifa]} {vis.nome}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <Bandeira codigo={casa.codigoFifa} size={20} />
+                      <span className="text-sm text-white font-medium">{casa.nome}</span>
+                      <span className="text-gray-500 mx-1">vs</span>
+                      <Bandeira codigo={vis.codigoFifa} size={20} />
+                      <span className="text-sm text-white font-medium">{vis.nome}</span>
+                    </div>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {p.fase} · {new Date(p.dataHora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                      {p.encerrada && <span className="ml-2 text-green-600">✓ Encerrada</span>}
+                      {p.encerrada && <span className="ml-2 text-green-600 font-medium">✓ Encerrada</span>}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="number" min="0" max="20"
+                    <input type="number" min="0" max="20"
                       defaultValue={p.golsCasa}
                       onChange={e => setPlacar(prev => ({ ...prev, [p.id]: { ...prev[p.id], golsCasa: e.target.value } }))}
-                      className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 text-sm"
-                    />
+                      className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 text-sm" />
                     <span className="text-gray-500">×</span>
-                    <input
-                      type="number" min="0" max="20"
+                    <input type="number" min="0" max="20"
                       defaultValue={p.golsVisitante}
                       onChange={e => setPlacar(prev => ({ ...prev, [p.id]: { ...prev[p.id], golsVisitante: e.target.value } }))}
-                      className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 text-sm"
-                    />
+                      className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 text-sm" />
                     <label className="flex items-center gap-1.5 text-sm text-gray-400 cursor-pointer">
-                      <input
-                        type="checkbox"
+                      <input type="checkbox"
                         defaultChecked={p.encerrada}
                         onChange={e => setPlacar(prev => ({ ...prev, [p.id]: { ...prev[p.id], encerrada: e.target.checked } }))}
-                        className="accent-yellow-500"
-                      />
+                        className="accent-yellow-500" />
                       Encerrar
                     </label>
-                    <button
-                      onClick={() => atualizarPlacar(p.id)}
-                      className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors"
-                    >
+                    <button onClick={() => atualizarPlacar(p.id)}
+                      className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors">
                       Salvar
                     </button>
                     {msgPlacar[p.id] && <span className="text-xs">{msgPlacar[p.id]}</span>}
@@ -271,19 +236,14 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── BÔNUS ── */}
+      {/* BÔNUS */}
       {tab === 'Bônus' && (
         <div className="space-y-3">
-          {bonus.length === 0 && (
-            <p className="text-gray-500 text-center py-10">Nenhum palpite bônus registrado.</p>
-          )}
+          {bonus.length === 0 && <p className="text-gray-500 text-center py-10">Nenhum palpite bônus registrado.</p>}
           {bonus.map(b => {
-            const [corr, setCorr] = useState({
-              campeaoAcertou: b.campeaoAcertou ?? false,
-              neymarGolAcertou: b.neymarGolAcertou ?? false,
-              artilheiroAcertou: b.artilheiroAcertou ?? false,
-              brasilFaseAcertou: b.brasilFaseAcertou ?? false,
-            })
+            const corr = correcoes[b.id] || {}
+            const setCorr = (field, val) =>
+              setCorrecoes(prev => ({ ...prev, [b.id]: { ...prev[b.id], [field]: val } }))
 
             return (
               <div key={b.id} className="bg-gray-900 rounded-xl border border-gray-800 p-4">
@@ -301,26 +261,22 @@ export default function Admin() {
                     { key: 'artilheiroAcertou', label: '👟 Artilheiro', val: b.artilheiro },
                     { key: 'brasilFaseAcertou', label: '🇧🇷 Brasil fase', val: b.brasilFase },
                   ].map(item => (
-                    <label key={item.key} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={corr[item.key]}
-                        onChange={e => setCorr(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                        className="accent-yellow-500"
-                      />
+                    <label key={item.key} className="flex items-center gap-2 cursor-pointer bg-gray-800 rounded-lg p-2">
+                      <input type="checkbox"
+                        checked={corr[item.key] || false}
+                        onChange={e => setCorr(item.key, e.target.checked)}
+                        className="accent-yellow-500" />
                       <div>
                         <p className="text-xs text-gray-400">{item.label}</p>
-                        <p className="text-white text-xs">{item.val || '-'}</p>
+                        <p className="text-white text-xs font-medium">{item.val || '-'}</p>
                       </div>
                     </label>
                   ))}
                 </div>
                 <div className="flex items-center gap-3">
                   {msgBonus[b.id] && <span className="text-xs">{msgBonus[b.id]}</span>}
-                  <button
-                    onClick={() => corrigirBonus(b, corr)}
-                    className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-4 py-1.5 rounded-lg text-xs transition-colors"
-                  >
+                  <button onClick={() => corrigirBonus(b)}
+                    className="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-4 py-1.5 rounded-lg text-xs transition-colors">
                     Salvar Correção
                   </button>
                 </div>
