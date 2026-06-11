@@ -42,6 +42,7 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
   const casa = partida.selecaoCasa
   const vis = partida.selecaoVisitante
   const temPalpite = palpite?.id != null
+  
 
   useEffect(() => {
     setGols({
@@ -117,7 +118,7 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
 
         {/* Placar central */}
         <div className="flex items-center gap-2">
-          {semPalpite ? (
+          {!temPalpite ? (
             // Sem palpite e encerrado — mostra traço
             <>
               <div className="w-14 h-14 bg-gray-800/50 border border-gray-800 rounded-xl flex items-center justify-center text-gray-700 font-bold text-2xl">—</div>
