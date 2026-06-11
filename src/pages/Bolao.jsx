@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import api from '../services/api'
 import Bandeira from '../components/Bandeira'
 
@@ -12,6 +12,7 @@ function formatDate(iso) {
   })
 }
 
+// Palpite fecha exatamente 1h antes do início
 function isAberta(partida) {
   const deadline = new Date(partida.dataHora).getTime() - 60 * 60 * 1000
   return !partida.encerrada && Date.now() < deadline
@@ -22,30 +23,38 @@ function PalpiteCard({ partida, palpite, onSalvar }) {
     casa: palpite?.golsCasa ?? '',
     vis: palpite?.golsVisitante ?? ''
   })
-  const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState('')
+  const [status, setStatus] = useState('') // '', 'saving', 'saved', 'error'
+  const debounceRef = useRef(null)
   const aberta = isAberta(partida)
   const casa = partida.selecaoCasa
   const vis = partida.selecaoVisitante
 
-  const handleSalvar = async () => {
-    if (gols.casa === '' || gols.vis === '') return
-    setSaving(true)
-    setMsg('')
+  // Auto-save com debounce de 800ms após digitar
+  const autoSave = useCallback(async (casa, vis) => {
+    if (casa === '' || vis === '') return
+    setStatus('saving')
     try {
       await api.post('/palpites', {
         partidaId: partida.id,
-        golsCasa: Number(gols.casa),
-        golsVisitante: Number(gols.vis)
+        golsCasa: Number(casa),
+        golsVisitante: Number(vis)
       })
-      setMsg('✅ Salvo!')
+      setStatus('saved')
       onSalvar?.()
-    } catch (err) {
-      setMsg('❌ ' + (err.response?.data?.message || 'Erro ao salvar'))
-    } finally {
-      setSaving(false)
-      setTimeout(() => setMsg(''), 3000)
+      setTimeout(() => setStatus(''), 2000)
+    } catch {
+      setStatus('error')
+      setTimeout(() => setStatus(''), 3000)
     }
+  }, [partida.id, onSalvar])
+
+  const handleChange = (field, value) => {
+    const next = { ...gols, [field]: value }
+    setGols(next)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      autoSave(next.casa, next.vis)
+    }, 800)
   }
 
   const ptClass = palpite?.pontosGanhos != null
@@ -53,32 +62,41 @@ function PalpiteCard({ partida, palpite, onSalvar }) {
       palpite.pontosGanhos === 5 ? 'text-yellow-400' : 'text-red-400'
     : ''
 
+  const statusIcon = {
+    saving: <span className="text-xs text-gray-400 animate-pulse">Salvando...</span>,
+    saved:  <span className="text-xs text-green-400">✅ Salvo</span>,
+    error:  <span className="text-xs text-red-400">❌ Erro ao salvar</span>,
+  }
+
   return (
     <div className={`bg-gray-900 rounded-xl border p-4 ${aberta ? 'border-gray-700' : 'border-gray-800 opacity-70'}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
+        {/* Casa */}
         <div className="flex-1 flex flex-col items-center gap-1 text-center">
           <Bandeira codigo={casa.codigoFifa} size={28} />
           <p className="text-xs text-gray-300 leading-tight">{casa.nome}</p>
         </div>
 
+        {/* Inputs */}
         <div className="flex items-center gap-2">
           <input
             type="number" min="0" max="20"
             value={gols.casa}
-            onChange={e => setGols({ ...gols, casa: e.target.value })}
+            onChange={e => handleChange('casa', e.target.value)}
             disabled={!aberta}
-            className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 disabled:opacity-40"
+            className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 disabled:opacity-40 text-lg"
           />
-          <span className="text-gray-500 font-bold text-lg">×</span>
+          <span className="text-gray-500 font-bold text-xl">×</span>
           <input
             type="number" min="0" max="20"
             value={gols.vis}
-            onChange={e => setGols({ ...gols, vis: e.target.value })}
+            onChange={e => handleChange('vis', e.target.value)}
             disabled={!aberta}
-            className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 disabled:opacity-40"
+            className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-yellow-500 disabled:opacity-40 text-lg"
           />
         </div>
 
+        {/* Visitante */}
         <div className="flex-1 flex flex-col items-center gap-1 text-center">
           <Bandeira codigo={vis.codigoFifa} size={28} />
           <p className="text-xs text-gray-300 leading-tight">{vis.nome}</p>
@@ -87,24 +105,15 @@ function PalpiteCard({ partida, palpite, onSalvar }) {
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-gray-500">{formatDate(partida.dataHora)}</p>
-        {palpite?.pontosGanhos != null ? (
-          <span className={`text-sm font-bold ${ptClass}`}>
-            {palpite.pontosGanhos} pts
-          </span>
-        ) : aberta ? (
-          <div className="flex items-center gap-2">
-            {msg && <span className="text-xs">{msg}</span>}
-            <button
-              onClick={handleSalvar}
-              disabled={saving}
-              className="text-xs bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-900 font-bold px-3 py-1 rounded-lg transition-colors"
-            >
-              {saving ? '...' : 'Salvar'}
-            </button>
-          </div>
-        ) : (
-          <span className="text-xs text-gray-600">Encerrada</span>
-        )}
+        <div>
+          {palpite?.pontosGanhos != null ? (
+            <span className={`text-sm font-bold ${ptClass}`}>{palpite.pontosGanhos} pts</span>
+          ) : aberta ? (
+            statusIcon[status] || <span className="text-xs text-gray-600">Digite o placar</span>
+          ) : (
+            <span className="text-xs text-gray-600">Encerrada</span>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -185,7 +194,7 @@ export default function Bolao() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-white">Meu Bolão</h1>
-        <p className="text-gray-400 mt-1">Palpites fecham 1h antes de cada jogo</p>
+        <p className="text-gray-400 mt-1">Palpites fecham 1h antes de cada jogo · salva automaticamente</p>
       </div>
 
       {/* BÔNUS */}
@@ -210,12 +219,10 @@ export default function Bolao() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1.5">🏆 Campeão do Mundo</label>
-            <select
-              value={bonusForm.campeao}
+            <select value={bonusForm.campeao}
               onChange={e => setBonusForm({ ...bonusForm, campeao: e.target.value })}
               disabled={!bonusAberto}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40"
-            >
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
               <option value="">Selecione...</option>
               {selecoes.sort((a, b) => a.nome.localeCompare(b.nome)).map(s => (
                 <option key={s.id} value={s.nome}>{s.nome}</option>
@@ -225,12 +232,10 @@ export default function Bolao() {
 
           <div>
             <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol na Copa?</label>
-            <select
-              value={bonusForm.neymarGol}
+            <select value={bonusForm.neymarGol}
               onChange={e => setBonusForm({ ...bonusForm, neymarGol: e.target.value })}
               disabled={!bonusAberto}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40"
-            >
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
               <option value="">Selecione...</option>
               <option value="true">Sim</option>
               <option value="false">Não</option>
@@ -239,24 +244,19 @@ export default function Bolao() {
 
           <div>
             <label className="block text-sm text-gray-400 mb-1.5">👟 Artilheiro da Copa</label>
-            <input
-              type="text"
-              value={bonusForm.artilheiro}
+            <input type="text" value={bonusForm.artilheiro}
               onChange={e => setBonusForm({ ...bonusForm, artilheiro: e.target.value })}
               disabled={!bonusAberto}
               placeholder="Nome do jogador"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500 disabled:opacity-40"
-            />
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500 disabled:opacity-40" />
           </div>
 
           <div>
             <label className="block text-sm text-gray-400 mb-1.5">🇧🇷 Até onde o Brasil vai?</label>
-            <select
-              value={bonusForm.brasilFase}
+            <select value={bonusForm.brasilFase}
               onChange={e => setBonusForm({ ...bonusForm, brasilFase: e.target.value })}
               disabled={!bonusAberto}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40"
-            >
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
               <option value="">Selecione...</option>
               {FASES_BRASIL.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
@@ -266,20 +266,18 @@ export default function Bolao() {
         {bonusAberto && (
           <div className="flex items-center gap-3 mt-4">
             {bonusMsg && <span className="text-sm">{bonusMsg}</span>}
-            <button
-              onClick={handleSalvarBonus}
-              disabled={savingBonus}
-              className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors"
-            >
+            <button onClick={handleSalvarBonus} disabled={savingBonus}
+              className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors">
               {savingBonus ? 'Salvando...' : 'Salvar Bônus'}
             </button>
           </div>
         )}
       </div>
 
-      {/* ABERTAS */}
+      {/* PARTIDAS ABERTAS */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">⚽ Partidas Abertas ({abertas.length})</h2>
+        <h2 className="text-xl font-bold text-white mb-1">⚽ Partidas Abertas ({abertas.length})</h2>
+        <p className="text-xs text-gray-500 mb-4">O placar salva sozinho ao digitar</p>
         {abertas.length === 0 ? (
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
             <p className="text-3xl mb-2">🔒</p>
@@ -288,18 +286,22 @@ export default function Bolao() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {abertas.map(p => (
-              <PalpiteCard key={p.id} partida={p} palpite={palpites.find(x => x.partida?.id === p.id)} onSalvar={loadData} />
+              <PalpiteCard key={p.id} partida={p}
+                palpite={palpites.find(x => x.partida?.id === p.id)}
+                onSalvar={loadData} />
             ))}
           </div>
         )}
       </div>
 
+      {/* HISTÓRICO */}
       {comPalpites.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-white mb-4">📋 Meus Palpites</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {comPalpites.map(p => (
-              <PalpiteCard key={p.id} partida={p} palpite={palpites.find(x => x.partida?.id === p.id)} />
+              <PalpiteCard key={p.id} partida={p}
+                palpite={palpites.find(x => x.partida?.id === p.id)} />
             ))}
           </div>
         </div>
