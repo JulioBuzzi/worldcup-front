@@ -117,23 +117,34 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
 
         {/* Placar central */}
         <div className="flex items-center gap-2">
-          <input
-            type="number" min="0" max="20"
-            value={gols.casa}
-            onChange={e => handleChange('casa', e.target.value)}
-            disabled={!aberta}
-            style={{ textAlign: 'center', MozAppearance: 'textfield' }}
-            className="w-14 h-14 bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
-          <span className="text-gray-600 font-bold text-xl select-none">×</span>
-          <input
-            type="number" min="0" max="20"
-            value={gols.vis}
-            onChange={e => handleChange('vis', e.target.value)}
-            disabled={!aberta}
-            style={{ textAlign: 'center', MozAppearance: 'textfield' }}
-            className="w-14 h-14 bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
+          {semPalpite ? (
+            // Sem palpite e encerrado — mostra traço
+            <>
+              <div className="w-14 h-14 bg-gray-800/50 border border-gray-800 rounded-xl flex items-center justify-center text-gray-700 font-bold text-2xl">—</div>
+              <span className="text-gray-700 font-bold text-xl select-none">×</span>
+              <div className="w-14 h-14 bg-gray-800/50 border border-gray-800 rounded-xl flex items-center justify-center text-gray-700 font-bold text-2xl">—</div>
+            </>
+          ) : (
+            <>
+              <input
+                type="number" min="0" max="20"
+                value={gols.casa}
+                onChange={e => handleChange('casa', e.target.value)}
+                disabled={!aberta}
+                style={{ textAlign: 'center', MozAppearance: 'textfield' }}
+                className="w-14 h-14 bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-gray-600 font-bold text-xl select-none">×</span>
+              <input
+                type="number" min="0" max="20"
+                value={gols.vis}
+                onChange={e => handleChange('vis', e.target.value)}
+                disabled={!aberta}
+                style={{ textAlign: 'center', MozAppearance: 'textfield' }}
+                className="w-14 h-14 bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </>
+          )}
         </div>
 
         {/* Visitante */}
@@ -279,9 +290,8 @@ export default function Bolao() {
   }
 
   const abertas = partidas.filter(p => isAberta(p))
-  const historico = partidas.filter(p =>
-    !isAberta(p) && palpites.find(x => x.partida?.id === p.id)
-  )
+  // Partidas que fecharam para palpite (1h antes ou encerradas)
+  const encerradas = partidas.filter(p => !isAberta(p))
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
@@ -444,18 +454,60 @@ export default function Bolao() {
         })()}
       </div>
 
-      {/* HISTÓRICO */}
-      {historico.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold text-white mb-4">📋 Meus Palpites</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {historico.map(p => (
-              <PalpiteCard key={p.id} partida={p}
-                palpite={palpites.find(x => x.partida?.id === p.id)} />
-            ))}
+      {/* ENCERRADOS */}
+      {encerradas.length > 0 && (() => {
+        const temRodadas = encerradas.some(p => p.fase === 'GRUPOS' && p.rodada)
+        const porRodada = temRodadas
+          ? encerradas.reduce((acc, p) => {
+              const r = p.rodada ?? 0
+              if (!acc[r]) acc[r] = []
+              acc[r].push(p)
+              return acc
+            }, {})
+          : null
+
+        return (
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-xl font-bold text-white">🔒 Palpites Encerrados</h2>
+              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">
+                {encerradas.length} partidas
+              </span>
+            </div>
+
+            {porRodada ? (
+              <div className="space-y-6">
+                {Object.entries(porRodada)
+                  .sort(([a], [b]) => Number(a) - Number(b))
+                  .map(([rodada, jogos]) => (
+                    <div key={rodada}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3 className="text-sm font-bold text-gray-400">
+                          {rodada === '0' ? 'Sem rodada' : `${rodada}ª Rodada`}
+                        </h3>
+                        <div className="flex-1 h-px bg-gray-800" />
+                        <span className="text-xs text-gray-600">{jogos.length} jogos</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {jogos.map(p => (
+                          <PalpiteCard key={p.id} partida={p}
+                            palpite={palpites.find(x => x.partida?.id === p.id)} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {encerradas.map(p => (
+                  <PalpiteCard key={p.id} partida={p}
+                    palpite={palpites.find(x => x.partida?.id === p.id)} />
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

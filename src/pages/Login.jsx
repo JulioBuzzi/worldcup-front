@@ -7,6 +7,7 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', senha: '' })
+  const [lembrar, setLembrar] = useState(true)
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -16,7 +17,7 @@ export default function Login() {
     setLoading(true)
     try {
       const { data } = await api.post('/auth/login', form)
-      login(data)
+      login(data, lembrar)
       navigate('/')
     } catch (err) {
       setErro(err.response?.data?.message || 'Email ou senha incorretos')
@@ -28,7 +29,6 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🏆</div>
           <h1 className="text-3xl font-bold text-white">Bolão Copa 2026</h1>
@@ -62,6 +62,32 @@ export default function Login() {
                 required
               />
             </div>
+
+            {/* Lembre de mim */}
+            <label className="flex items-center gap-3 cursor-pointer select-none group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={lembrar}
+                  onChange={e => setLembrar(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  lembrar
+                    ? 'bg-yellow-500 border-yellow-500'
+                    : 'bg-transparent border-gray-600 group-hover:border-gray-400'
+                }`}>
+                  {lembrar && (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                Lembre de mim
+              </span>
+            </label>
 
             {erro && (
               <div className="bg-red-900/30 border border-red-700 rounded-lg px-4 py-3 text-red-400 text-sm">
