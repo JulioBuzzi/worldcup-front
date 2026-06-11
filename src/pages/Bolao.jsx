@@ -12,6 +12,18 @@ function formatDate(iso) {
   })
 }
 
+function getCountdown(dataHora) {
+  const deadline = new Date(dataHora).getTime() - 60 * 60 * 1000
+  const diff = deadline - Date.now()
+  if (diff <= 0) return null
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h ${mins}min`
+  return `${mins}min`
+}
+
 function isAberta(partida) {
   const deadline = new Date(partida.dataHora).getTime() - 60 * 60 * 1000
   return !partida.encerrada && Date.now() < deadline
@@ -24,6 +36,7 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
   })
   const [status, setStatus] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [countdown, setCountdown] = useState(() => getCountdown(partida.dataHora))
   const debounceRef = useRef(null)
   const aberta = isAberta(partida)
   const casa = partida.selecaoCasa
@@ -36,6 +49,14 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
       vis: palpite?.golsVisitante ?? ''
     })
   }, [palpite?.golsCasa, palpite?.golsVisitante])
+
+  useEffect(() => {
+    if (!aberta) return
+    const timer = setInterval(() => {
+      setCountdown(getCountdown(partida.dataHora))
+    }, 30000)
+    return () => clearInterval(timer)
+  }, [aberta, partida.dataHora])
 
   const autoSave = useCallback(async (casaVal, visVal) => {
     if (casaVal === '' || visVal === '') return
@@ -101,7 +122,8 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
             value={gols.casa}
             onChange={e => handleChange('casa', e.target.value)}
             disabled={!aberta}
-            className="w-14 h-14 text-center bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors"
+            style={{ textAlign: 'center', MozAppearance: 'textfield' }}
+            className="w-14 h-14 bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           <span className="text-gray-600 font-bold text-xl select-none">×</span>
           <input
@@ -109,7 +131,8 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
             value={gols.vis}
             onChange={e => handleChange('vis', e.target.value)}
             disabled={!aberta}
-            className="w-14 h-14 text-center bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors"
+            style={{ textAlign: 'center', MozAppearance: 'textfield' }}
+            className="w-14 h-14 bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         </div>
 
@@ -122,7 +145,12 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
 
       {/* Footer */}
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-800">
-        <p className="text-xs text-gray-500">{formatDate(partida.dataHora)}</p>
+        <div>
+          <p className="text-xs text-gray-500">{formatDate(partida.dataHora)}</p>
+          {aberta && countdown && (
+            <p className="text-xs text-yellow-500/80 font-medium mt-0.5">⏱ Fecha em {countdown}</p>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {/* Pontos (jogo encerrado) */}
