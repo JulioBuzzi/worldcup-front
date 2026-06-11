@@ -30,7 +30,6 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
   const vis = partida.selecaoVisitante
   const temPalpite = palpite?.id != null
 
-  // Sync quando palpite muda externamente
   useEffect(() => {
     setGols({
       casa: palpite?.golsCasa ?? '',
@@ -92,13 +91,11 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
     <div className={`bg-gray-900 rounded-xl border p-4 transition-all ${
       aberta ? 'border-gray-700' : 'border-gray-800 opacity-75'
     }`}>
-      {/* Times */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex-1 flex flex-col items-center gap-1 text-center">
           <Bandeira codigo={casa.codigoFifa} size={28} />
           <p className="text-xs text-gray-300 leading-tight">{casa.nome}</p>
         </div>
-
         <div className="flex items-center gap-2">
           <input type="number" min="0" max="20"
             value={gols.casa}
@@ -114,43 +111,34 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
             className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold text-lg focus:outline-none focus:border-yellow-500 disabled:opacity-40"
           />
         </div>
-
         <div className="flex-1 flex flex-col items-center gap-1 text-center">
           <Bandeira codigo={vis.codigoFifa} size={28} />
           <p className="text-xs text-gray-300 leading-tight">{vis.nome}</p>
         </div>
       </div>
 
-      {/* Footer */}
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-gray-500">{formatDate(partida.dataHora)}</p>
-
         <div className="flex items-center gap-2">
           {palpite?.pontosGanhos != null ? (
             <span className={`text-sm font-bold ${ptClass}`}>{palpite.pontosGanhos} pts</span>
           ) : aberta ? (
             <>
               {statusEl[status] || (
-                <span className="text-xs text-gray-600">
-                  {temPalpite ? '' : 'Digite o placar'}
-                </span>
+                <span className="text-xs text-gray-600">{temPalpite ? '' : 'Digite o placar'}</span>
               )}
-              {/* Botão excluir — só aparece se já tem palpite */}
               {temPalpite && !status && (
                 <button
                   onClick={handleDeletar}
                   className={`text-xs px-2 py-1 rounded-lg transition-colors ${
-                    confirmDelete
-                      ? 'bg-red-600 text-white hover:bg-red-500'
-                      : 'text-gray-500 hover:text-red-400'
+                    confirmDelete ? 'bg-red-600 text-white hover:bg-red-500' : 'text-gray-500 hover:text-red-400'
                   }`}
                 >
                   {confirmDelete ? 'Confirmar?' : '🗑'}
                 </button>
               )}
               {confirmDelete && (
-                <button onClick={() => setConfirmDelete(false)}
-                  className="text-xs text-gray-500 hover:text-white px-1">
+                <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500 hover:text-white px-1">
                   ✕
                 </button>
               )}
@@ -201,7 +189,8 @@ export default function Bolao() {
   useEffect(() => { loadData() }, [])
 
   const handleSalvarBonus = async () => {
-    setSavingBonus(true); setBonusMsg('')
+    setSavingBonus(true)
+    setBonusMsg('')
     try {
       await api.post('/bonus', {
         campeao: bonusForm.campeao || null,
@@ -211,8 +200,9 @@ export default function Bolao() {
       })
       setBonusMsg('✅ Bônus salvo!')
       loadData()
-    } catch { setBonusMsg('❌ Erro ao salvar') }
-    finally {
+    } catch {
+      setBonusMsg('❌ Erro ao salvar')
+    } finally {
       setSavingBonus(false)
       setTimeout(() => setBonusMsg(''), 4000)
     }
@@ -238,6 +228,7 @@ export default function Bolao() {
 
       {/* BÔNUS — accordion */}
       <div className="bg-gray-900 rounded-2xl border border-yellow-500/30 overflow-hidden">
+
         {/* Header clicável */}
         <button
           onClick={() => setBonusOpen(prev => !prev)}
@@ -253,13 +244,13 @@ export default function Bolao() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex text-right text-xs text-gray-500 space-y-0 gap-3">
+            <div className="hidden sm:flex text-xs text-gray-500 gap-3">
               <span>🏆 25pts</span>
               <span>⚽ 10pts</span>
               <span>👟 25pts</span>
               <span>🇧🇷 25pts</span>
             </div>
-            <span className={`text-gray-400 transition-transform duration-200 ${bonusOpen ? 'rotate-180' : ''}`}>
+            <span className={`text-gray-400 text-xs transition-transform duration-200 inline-block ${bonusOpen ? 'rotate-180' : ''}`}>
               ▼
             </span>
           </div>
@@ -267,61 +258,59 @@ export default function Bolao() {
 
         {/* Conteúdo expansível */}
         {bonusOpen && (
-        <div className="px-6 pb-6 border-t border-yellow-500/20">
-          <div className="pt-4">
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-gray-400 mb-1.5">🏆 Campeão do Mundo</label>
-            <select value={bonusForm.campeao}
-              onChange={e => setBonusForm({ ...bonusForm, campeao: e.target.value })}
-              disabled={!bonusAberto}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
-              <option value="">Selecione...</option>
-              {selecoes.sort((a, b) => a.nome.localeCompare(b.nome)).map(s => (
-                <option key={s.id} value={s.nome}>{s.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol na Copa?</label>
-            <select value={bonusForm.neymarGol}
-              onChange={e => setBonusForm({ ...bonusForm, neymarGol: e.target.value })}
-              disabled={!bonusAberto}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
-              <option value="">Selecione...</option>
-              <option value="true">Sim</option>
-              <option value="false">Não</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-1.5">👟 Artilheiro da Copa</label>
-            <input type="text" value={bonusForm.artilheiro}
-              onChange={e => setBonusForm({ ...bonusForm, artilheiro: e.target.value })}
-              disabled={!bonusAberto} placeholder="Nome do jogador"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500 disabled:opacity-40" />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-400 mb-1.5">🇧🇷 Até onde o Brasil vai?</label>
-            <select value={bonusForm.brasilFase}
-              onChange={e => setBonusForm({ ...bonusForm, brasilFase: e.target.value })}
-              disabled={!bonusAberto}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
-              <option value="">Selecione...</option>
-              {FASES_BRASIL.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </div>
-        </div>
-
-          {bonusAberto && (
-            <div className="flex items-center gap-3 mt-4">
-              {bonusMsg && <span className="text-sm">{bonusMsg}</span>}
-              <button onClick={handleSalvarBonus} disabled={savingBonus}
-                className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors">
-                {savingBonus ? 'Salvando...' : 'Salvar Bônus'}
-              </button>
+          <div className="px-6 pb-6 border-t border-yellow-500/20 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1.5">🏆 Campeão do Mundo</label>
+                <select value={bonusForm.campeao}
+                  onChange={e => setBonusForm({ ...bonusForm, campeao: e.target.value })}
+                  disabled={!bonusAberto}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
+                  <option value="">Selecione...</option>
+                  {selecoes.sort((a, b) => a.nome.localeCompare(b.nome)).map(s => (
+                    <option key={s.id} value={s.nome}>{s.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol na Copa?</label>
+                <select value={bonusForm.neymarGol}
+                  onChange={e => setBonusForm({ ...bonusForm, neymarGol: e.target.value })}
+                  disabled={!bonusAberto}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
+                  <option value="">Selecione...</option>
+                  <option value="true">Sim</option>
+                  <option value="false">Não</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1.5">👟 Artilheiro da Copa</label>
+                <input type="text" value={bonusForm.artilheiro}
+                  onChange={e => setBonusForm({ ...bonusForm, artilheiro: e.target.value })}
+                  disabled={!bonusAberto} placeholder="Nome do jogador"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-yellow-500 disabled:opacity-40" />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1.5">🇧🇷 Até onde o Brasil vai?</label>
+                <select value={bonusForm.brasilFase}
+                  onChange={e => setBonusForm({ ...bonusForm, brasilFase: e.target.value })}
+                  disabled={!bonusAberto}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
+                  <option value="">Selecione...</option>
+                  {FASES_BRASIL.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
             </div>
-          )}
+
+            {bonusAberto && (
+              <div className="flex items-center gap-3 mt-4">
+                {bonusMsg && <span className="text-sm">{bonusMsg}</span>}
+                <button onClick={handleSalvarBonus} disabled={savingBonus}
+                  className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors">
+                  {savingBonus ? 'Salvando...' : 'Salvar Bônus'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
