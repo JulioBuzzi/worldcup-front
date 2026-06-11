@@ -28,13 +28,11 @@ function PartidaCard({ partida }) {
       partida.encerrada ? 'border-gray-700 opacity-80' : 'border-gray-800'
     }`}>
       <div className="flex items-center justify-between gap-3">
-        {/* Casa */}
         <div className="flex-1 flex flex-col items-center gap-1.5 text-center">
           <Bandeira codigo={casa.codigoFifa} size={32} />
           <p className="text-xs font-medium text-white leading-tight">{casa.nome}</p>
         </div>
 
-        {/* Placar / VS */}
         <div className="text-center min-w-[90px]">
           {partida.encerrada ? (
             <div className="text-2xl font-bold text-yellow-400">
@@ -45,11 +43,10 @@ function PartidaCard({ partida }) {
           )}
           <div className="text-xs text-gray-500 mt-1">{formatDate(partida.dataHora)}</div>
           {partida.encerrada && (
-            <span className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full mt-1 inline-block">Encerrada</span>
+            <span className="text-xs bg-gray-800 text-gray-500 px-2 py-0.5 rounded-full mt-1 inline-block">Encerrada</span>
           )}
         </div>
 
-        {/* Visitante */}
         <div className="flex-1 flex flex-col items-center gap-1.5 text-center">
           <Bandeira codigo={vis.codigoFifa} size={32} />
           <p className="text-xs font-medium text-white leading-tight">{vis.nome}</p>
@@ -75,6 +72,16 @@ export default function Partidas() {
   const fasesComPartidas = FASES.filter(f => partidas.some(p => p.fase === f.key))
   const fasesVisiveis = fasesComPartidas.length > 0 ? fasesComPartidas : [FASES[0]]
 
+  // Agrupar por rodada (só na fase de grupos)
+  const porRodada = faseAtiva === 'GRUPOS'
+    ? filtradas.reduce((acc, p) => {
+        const r = p.rodada ?? 0
+        if (!acc[r]) acc[r] = []
+        acc[r].push(p)
+        return acc
+      }, {})
+    : null
+
   return (
     <div>
       <div className="mb-6">
@@ -82,17 +89,15 @@ export default function Partidas() {
         <p className="text-gray-400 mt-1">Acompanhe todos os jogos</p>
       </div>
 
+      {/* Tabs de fase */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
         {fasesVisiveis.map(f => (
-          <button
-            key={f.key}
-            onClick={() => setFaseAtiva(f.key)}
+          <button key={f.key} onClick={() => setFaseAtiva(f.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               faseAtiva === f.key
                 ? 'bg-yellow-500 text-gray-900'
                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
-          >
+            }`}>
             {f.label}
           </button>
         ))}
@@ -107,7 +112,28 @@ export default function Partidas() {
           <p className="text-4xl mb-3">📅</p>
           <p>Nenhuma partida cadastrada nessa fase ainda.</p>
         </div>
+      ) : porRodada ? (
+        // Fase de grupos — agrupado por rodada
+        <div className="space-y-8">
+          {Object.entries(porRodada)
+            .sort(([a], [b]) => Number(a) - Number(b))
+            .map(([rodada, jogos]) => (
+              <div key={rodada}>
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-base font-bold text-white">
+                    {rodada === '0' ? 'Sem rodada' : `${rodada}ª Rodada`}
+                  </h2>
+                  <div className="flex-1 h-px bg-gray-800" />
+                  <span className="text-xs text-gray-500">{jogos.length} jogos</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {jogos.map(p => <PartidaCard key={p.id} partida={p} />)}
+                </div>
+              </div>
+            ))}
+        </div>
       ) : (
+        // Outras fases — grid normal
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtradas.map(p => <PartidaCard key={p.id} partida={p} />)}
         </div>
