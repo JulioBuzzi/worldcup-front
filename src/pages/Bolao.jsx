@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import api from '../services/api'
 import Bandeira from '../components/Bandeira'
 
-const DEADLINE_BONUS = new Date('2026-06-14T23:59:00-03:00')
+const DEADLINE_BONUS = new Date('2026-06-17T23:59:00-03:00')
 const FASES_BRASIL = ['GRUPOS', 'DEZASSEIS', 'OITAVAS', 'QUARTAS', 'SEMI', 'FINAL', 'CAMPEAO']
 
 function formatDate(iso) {
@@ -314,7 +314,7 @@ export default function Bolao() {
                 )}
               </div>
               <p className="text-xs text-gray-400">
-                {bonusAberto ? 'Prazo: 14/06/2026 às 23:59' : '⛔ Prazo encerrado'}
+                {bonusAberto ? 'Prazo: 17/06/2026 às 23:59' : '⛔ Prazo encerrado'}
               </p>
             </div>
           </div>
@@ -347,7 +347,7 @@ export default function Bolao() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca pelo menos 1 gol na Copa? (tempo regulamentar)</label>
+                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol na Copa?</label>
                 <select value={bonusForm.neymarGol}
                   onChange={e => setBonusForm({ ...bonusForm, neymarGol: e.target.value })}
                   disabled={!bonusAberto}
