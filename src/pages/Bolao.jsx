@@ -397,15 +397,51 @@ export default function Bolao() {
             <p className="text-3xl mb-2">🔒</p>
             <p>Nenhuma partida disponível para palpite no momento.</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {abertas.map(p => (
-              <PalpiteCard key={p.id} partida={p}
-                palpite={palpites.find(x => x.partida?.id === p.id)}
-                onSalvar={loadData} onDeletar={loadData} />
-            ))}
-          </div>
-        )}
+        ) : (() => {
+          // Agrupar por rodada quando fase de grupos
+          const temRodadas = abertas.some(p => p.fase === 'GRUPOS' && p.rodada)
+          if (!temRodadas) {
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {abertas.map(p => (
+                  <PalpiteCard key={p.id} partida={p}
+                    palpite={palpites.find(x => x.partida?.id === p.id)}
+                    onSalvar={loadData} onDeletar={loadData} />
+                ))}
+              </div>
+            )
+          }
+          const porRodada = abertas.reduce((acc, p) => {
+            const r = p.rodada ?? 0
+            if (!acc[r]) acc[r] = []
+            acc[r].push(p)
+            return acc
+          }, {})
+          return (
+            <div className="space-y-6">
+              {Object.entries(porRodada)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([rodada, jogos]) => (
+                  <div key={rodada}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="text-sm font-bold text-gray-300">
+                        {rodada === '0' ? 'Sem rodada' : `${rodada}ª Rodada`}
+                      </h3>
+                      <div className="flex-1 h-px bg-gray-800" />
+                      <span className="text-xs text-gray-600">{jogos.length} jogos</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {jogos.map(p => (
+                        <PalpiteCard key={p.id} partida={p}
+                          palpite={palpites.find(x => x.partida?.id === p.id)}
+                          onSalvar={loadData} onDeletar={loadData} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )
+        })()}
       </div>
 
       {/* HISTÓRICO */}
