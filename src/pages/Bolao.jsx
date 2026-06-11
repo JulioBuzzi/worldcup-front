@@ -81,70 +81,107 @@ function PalpiteCard({ partida, palpite, onSalvar, onDeletar }) {
     : 'text-red-400'
     : ''
 
-  const statusEl = {
-    saving: <span className="text-xs text-gray-400 animate-pulse">Salvando...</span>,
-    saved:  <span className="text-xs text-green-400">✅ Salvo</span>,
-    error:  <span className="text-xs text-red-400">❌ Erro</span>,
-  }
-
   return (
     <div className={`bg-gray-900 rounded-xl border p-4 transition-all ${
       aberta ? 'border-gray-700' : 'border-gray-800 opacity-75'
     }`}>
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex-1 flex flex-col items-center gap-1 text-center">
-          <Bandeira codigo={casa.codigoFifa} size={28} />
-          <p className="text-xs text-gray-300 leading-tight">{casa.nome}</p>
+      {/* Times + inputs */}
+      <div className="flex items-center gap-3 mb-3">
+
+        {/* Mandante */}
+        <div className="flex-1 flex flex-col items-center gap-1.5 text-center">
+          <Bandeira codigo={casa.codigoFifa} size={30} />
+          <p className="text-xs text-gray-300 leading-tight font-medium">{casa.nome}</p>
         </div>
+
+        {/* Placar central */}
         <div className="flex items-center gap-2">
-          <input type="number" min="0" max="20"
+          <input
+            type="number" min="0" max="20"
             value={gols.casa}
             onChange={e => handleChange('casa', e.target.value)}
             disabled={!aberta}
-            className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold text-lg focus:outline-none focus:border-yellow-500 disabled:opacity-40"
+            className="w-14 h-14 text-center bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors"
           />
-          <span className="text-gray-500 font-bold text-xl">×</span>
-          <input type="number" min="0" max="20"
+          <span className="text-gray-600 font-bold text-xl select-none">×</span>
+          <input
+            type="number" min="0" max="20"
             value={gols.vis}
             onChange={e => handleChange('vis', e.target.value)}
             disabled={!aberta}
-            className="w-12 text-center bg-gray-800 border border-gray-700 rounded-lg py-1.5 text-white font-bold text-lg focus:outline-none focus:border-yellow-500 disabled:opacity-40"
+            className="w-14 h-14 text-center bg-gray-800 border border-gray-700 rounded-xl text-white font-bold text-2xl focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 transition-colors"
           />
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 text-center">
-          <Bandeira codigo={vis.codigoFifa} size={28} />
-          <p className="text-xs text-gray-300 leading-tight">{vis.nome}</p>
+
+        {/* Visitante */}
+        <div className="flex-1 flex flex-col items-center gap-1.5 text-center">
+          <Bandeira codigo={vis.codigoFifa} size={30} />
+          <p className="text-xs text-gray-300 leading-tight font-medium">{vis.nome}</p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-800">
         <p className="text-xs text-gray-500">{formatDate(partida.dataHora)}</p>
+
         <div className="flex items-center gap-2">
-          {palpite?.pontosGanhos != null ? (
+          {/* Pontos (jogo encerrado) */}
+          {palpite?.pontosGanhos != null && (
             <span className={`text-sm font-bold ${ptClass}`}>{palpite.pontosGanhos} pts</span>
-          ) : aberta ? (
-            <>
-              {statusEl[status] || (
-                <span className="text-xs text-gray-600">{temPalpite ? '' : 'Digite o placar'}</span>
-              )}
-              {temPalpite && !status && (
+          )}
+
+          {/* Status do auto-save */}
+          {aberta && status === 'saving' && (
+            <span className="text-xs text-gray-400 animate-pulse">Salvando...</span>
+          )}
+          {aberta && status === 'saved' && (
+            <span className="text-xs text-green-400">✓ Salvo</span>
+          )}
+          {aberta && status === 'error' && (
+            <span className="text-xs text-red-400">✗ Erro</span>
+          )}
+
+          {/* Botão excluir — só se tem palpite e está aberta e não está mostrando status */}
+          {aberta && temPalpite && !status && (
+            confirmDelete ? (
+              <div className="flex items-center gap-1">
                 <button
                   onClick={handleDeletar}
-                  className={`text-xs px-2 py-1 rounded-lg transition-colors ${
-                    confirmDelete ? 'bg-red-600 text-white hover:bg-red-500' : 'text-gray-500 hover:text-red-400'
-                  }`}
+                  className="text-xs bg-red-600 hover:bg-red-500 text-white px-2.5 py-1 rounded-lg font-medium transition-colors"
                 >
-                  {confirmDelete ? 'Confirmar?' : '🗑'}
+                  Excluir
                 </button>
-              )}
-              {confirmDelete && (
-                <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-500 hover:text-white px-1">
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs text-gray-500 hover:text-gray-300 px-1.5 py-1 rounded transition-colors"
+                >
                   ✕
                 </button>
-              )}
-            </>
-          ) : (
-            <span className="text-xs text-gray-600">Encerrada</span>
+              </div>
+            ) : (
+              <button
+                onClick={handleDeletar}
+                title="Excluir palpite"
+                className="text-gray-600 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-400/10"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              </button>
+            )
+          )}
+
+          {/* Hint quando aberta mas sem palpite */}
+          {aberta && !temPalpite && !status && (
+            <span className="text-xs text-gray-600 italic">Digite o placar</span>
+          )}
+
+          {/* Encerrada sem palpite */}
+          {!aberta && !temPalpite && palpite?.pontosGanhos == null && (
+            <span className="text-xs text-gray-700">—</span>
           )}
         </div>
       </div>
@@ -223,13 +260,11 @@ export default function Bolao() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-white">Meu Bolão</h1>
-        <p className="text-gray-400 mt-1">Palpites fecham 1h antes · salva automaticamente · 🗑 para excluir</p>
+        <p className="text-gray-400 mt-1">Palpites fecham 1h antes · salva automaticamente</p>
       </div>
 
       {/* BÔNUS — accordion */}
       <div className="bg-gray-900 rounded-2xl border border-yellow-500/30 overflow-hidden">
-
-        {/* Header clicável */}
         <button
           onClick={() => setBonusOpen(prev => !prev)}
           className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-800/50 transition-colors"
@@ -243,22 +278,21 @@ export default function Bolao() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div className="hidden sm:flex text-xs text-gray-500 gap-3">
               <span>🏆 25pts</span>
               <span>⚽ 10pts</span>
               <span>👟 25pts</span>
               <span>🇧🇷 25pts</span>
             </div>
-            <span className={`text-gray-400 text-xs transition-transform duration-200 inline-block ${bonusOpen ? 'rotate-180' : ''}`}>
+            <span className={`text-gray-400 text-xs inline-block transition-transform duration-200 ${bonusOpen ? 'rotate-180' : ''}`}>
               ▼
             </span>
           </div>
         </button>
 
-        {/* Conteúdo expansível */}
         {bonusOpen && (
-          <div className="px-6 pb-6 border-t border-yellow-500/20 pt-4">
+          <div className="px-6 pb-6 pt-4 border-t border-yellow-500/20">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-1.5">🏆 Campeão do Mundo</label>
@@ -301,7 +335,6 @@ export default function Bolao() {
                 </select>
               </div>
             </div>
-
             {bonusAberto && (
               <div className="flex items-center gap-3 mt-4">
                 {bonusMsg && <span className="text-sm">{bonusMsg}</span>}
@@ -318,7 +351,7 @@ export default function Bolao() {
       {/* ABERTAS */}
       <div>
         <h2 className="text-xl font-bold text-white mb-1">⚽ Partidas Abertas ({abertas.length})</h2>
-        <p className="text-xs text-gray-500 mb-4">Salva ao digitar · clique 🗑 para excluir um palpite</p>
+        <p className="text-xs text-gray-500 mb-4">Salva automaticamente ao digitar</p>
         {abertas.length === 0 ? (
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500">
             <p className="text-3xl mb-2">🔒</p>
