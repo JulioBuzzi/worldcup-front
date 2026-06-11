@@ -194,6 +194,7 @@ export default function Bolao() {
   const [palpites, setPalpites] = useState([])
   const [selecoes, setSelecoes] = useState([])
   const [bonusForm, setBonusForm] = useState({ campeao: '', neymarGol: '', artilheiro: '', brasilFase: '' })
+  const [temBonus, setTemBonus] = useState(false)
   const [loading, setLoading] = useState(true)
   const [savingBonus, setSavingBonus] = useState(false)
   const [bonusMsg, setBonusMsg] = useState('')
@@ -211,13 +212,16 @@ export default function Bolao() {
       setPalpites(pRes.data)
       setPartidas(partRes.data)
       setSelecoes(selRes.data)
-      if (bRes.data) {
+      if (bRes.data && bRes.status !== 204) {
+        setTemBonus(true)
         setBonusForm({
           campeao: bRes.data.campeao || '',
           neymarGol: bRes.data.neymarGol != null ? String(bRes.data.neymarGol) : '',
           artilheiro: bRes.data.artilheiro || '',
           brasilFase: bRes.data.brasilFase || ''
         })
+      } else {
+        setTemBonus(false)
       }
     } catch (err) { console.error(err) }
     finally { setLoading(false) }
@@ -235,6 +239,7 @@ export default function Bolao() {
         artilheiro: bonusForm.artilheiro || null,
         brasilFase: bonusForm.brasilFase || null
       })
+      setTemBonus(true)
       setBonusMsg('✅ Bônus salvo!')
       loadData()
     } catch {
@@ -272,7 +277,14 @@ export default function Bolao() {
           <div className="flex items-center gap-3">
             <span className="text-xl">🌟</span>
             <div className="text-left">
-              <h2 className="text-lg font-bold text-white">Palpites Bônus</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-white">Palpites Bônus</h2>
+                {temBonus && (
+                  <span className="text-xs bg-green-700/40 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full font-medium">
+                    ✓ Preenchido
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-400">
                 {bonusAberto ? 'Prazo: 14/06/2026 às 23:59' : '⛔ Prazo encerrado'}
               </p>
@@ -340,7 +352,7 @@ export default function Bolao() {
                 {bonusMsg && <span className="text-sm">{bonusMsg}</span>}
                 <button onClick={handleSalvarBonus} disabled={savingBonus}
                   className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors">
-                  {savingBonus ? 'Salvando...' : 'Salvar Bônus'}
+                  {savingBonus ? 'Salvando...' : temBonus ? 'Atualizar Bônus' : 'Salvar Bônus'}
                 </button>
               </div>
             )}
