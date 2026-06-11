@@ -130,13 +130,16 @@ export default function Ranking() {
                         )}
                       </div>
                       {podeVer && !isMe && (
-                        <span className={`ml-auto text-xs px-2 py-0.5 rounded-full border transition-colors shrink-0 ${
-                          isSelected
-                            ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
-                            : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'
-                        }`}>
+                        <button
+                          onClick={e => { e.stopPropagation(); verPalpites(r) }}
+                          className={`ml-auto text-xs px-2.5 py-1 rounded-full border transition-all shrink-0 cursor-pointer ${
+                            isSelected
+                              ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white'
+                              : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'
+                          }`}
+                        >
                           {isSelected ? '✕ fechar' : 'ver palpites'}
-                        </span>
+                        </button>
                       )}
                     </div>
                     <div className="col-span-2 flex items-center justify-center">
