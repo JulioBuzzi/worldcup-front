@@ -172,6 +172,7 @@ export default function Bolao() {
   const [loading, setLoading] = useState(true)
   const [savingBonus, setSavingBonus] = useState(false)
   const [bonusMsg, setBonusMsg] = useState('')
+  const [bonusOpen, setBonusOpen] = useState(false)
   const bonusAberto = Date.now() < DEADLINE_BONUS
 
   const loadData = async () => {
@@ -235,22 +236,39 @@ export default function Bolao() {
         <p className="text-gray-400 mt-1">Palpites fecham 1h antes · salva automaticamente · 🗑 para excluir</p>
       </div>
 
-      {/* BÔNUS */}
-      <div className="bg-gray-900 rounded-2xl border border-yellow-500/30 p-6">
-        <div className="flex items-start justify-between mb-4 gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-white">🌟 Palpites Bônus</h2>
-            <p className="text-sm text-gray-400 mt-0.5">
-              {bonusAberto ? 'Prazo: 14/06/2026 às 23:59' : '⛔ Prazo encerrado'}
-            </p>
+      {/* BÔNUS — accordion */}
+      <div className="bg-gray-900 rounded-2xl border border-yellow-500/30 overflow-hidden">
+        {/* Header clicável */}
+        <button
+          onClick={() => setBonusOpen(prev => !prev)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-800/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🌟</span>
+            <div className="text-left">
+              <h2 className="text-lg font-bold text-white">Palpites Bônus</h2>
+              <p className="text-xs text-gray-400">
+                {bonusAberto ? 'Prazo: 14/06/2026 às 23:59' : '⛔ Prazo encerrado'}
+              </p>
+            </div>
           </div>
-          <div className="text-right text-xs text-gray-500 space-y-0.5 shrink-0">
-            <div>🏆 Campeão = 25 pts</div>
-            <div>⚽ Neymar gol = 10 pts</div>
-            <div>👟 Artilheiro = 25 pts</div>
-            <div>🇧🇷 Fase Brasil = 25 pts</div>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex text-right text-xs text-gray-500 space-y-0 gap-3">
+              <span>🏆 25pts</span>
+              <span>⚽ 10pts</span>
+              <span>👟 25pts</span>
+              <span>🇧🇷 25pts</span>
+            </div>
+            <span className={`text-gray-400 transition-transform duration-200 ${bonusOpen ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
           </div>
-        </div>
+        </button>
+
+        {/* Conteúdo expansível */}
+        {bonusOpen && (
+        <div className="px-6 pb-6 border-t border-yellow-500/20">
+          <div className="pt-4">
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -295,13 +313,15 @@ export default function Bolao() {
           </div>
         </div>
 
-        {bonusAberto && (
-          <div className="flex items-center gap-3 mt-4">
-            {bonusMsg && <span className="text-sm">{bonusMsg}</span>}
-            <button onClick={handleSalvarBonus} disabled={savingBonus}
-              className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors">
-              {savingBonus ? 'Salvando...' : 'Salvar Bônus'}
-            </button>
+          {bonusAberto && (
+            <div className="flex items-center gap-3 mt-4">
+              {bonusMsg && <span className="text-sm">{bonusMsg}</span>}
+              <button onClick={handleSalvarBonus} disabled={savingBonus}
+                className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-900 font-bold px-6 py-2 rounded-lg text-sm transition-colors">
+                {savingBonus ? 'Salvando...' : 'Salvar Bônus'}
+              </button>
+            </div>
+          )}
           </div>
         )}
       </div>
