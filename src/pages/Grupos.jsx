@@ -52,7 +52,7 @@ function calcularClassificacao(selecoes, partidas) {
 }
 
 // Calcula os 8 melhores terceiros entre todos os grupos
-/*function calcularMelhoresTerceiros(todosGrupos, todasPartidas) {
+function calcularMelhoresTerceiros(todosGrupos, todasPartidas) {
   const terceiros = []
   Object.entries(todosGrupos).forEach(([grupo, selecoes]) => {
     const partidasGrupo = todasPartidas.filter(p => {
@@ -75,7 +75,7 @@ function calcularClassificacao(selecoes, partidas) {
   return terceiros
     .sort((a, b) => b.pts - a.pts || b.sg - a.sg || b.gp - a.gp)
     .slice(0, 8)
-} */
+} 
 
 export default function Grupos() {
   const [grupos, setGrupos] = useState({})
