@@ -347,7 +347,7 @@ export default function Bolao() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol na Copa?</label>
+                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca pelo menos 1 gol na Copa? (tempo regulamentar)</label>
                 <select value={bonusForm.neymarGol}
                   onChange={e => setBonusForm({ ...bonusForm, neymarGol: e.target.value })}
                   disabled={!bonusAberto}
