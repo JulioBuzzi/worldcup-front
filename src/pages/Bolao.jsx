@@ -383,6 +383,8 @@ export default function Bolao() {
   const abertas = partidas.filter(p => isAberta(p))
   const encerradas = partidas.filter(p => !isAberta(p))
   const jogosHoje = abertas.filter(p => isHoje(p.dataHora))
+  // Abertas sem os jogos de hoje (já aparecem na seção de cima)
+  const abertasSemHoje = abertas.filter(p => !isHoje(p.dataHora))
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
@@ -508,9 +510,9 @@ export default function Bolao() {
           }`}
         >
           ⚽ Abertas
-          {abertas.length > 0 && (
+          {abertasSemHoje.length > 0 && (
             <span className="ml-1.5 text-xs bg-yellow-500 text-gray-900 font-bold px-1.5 py-0.5 rounded-full">
-              {abertas.length}
+              {abertasSemHoje.length}
             </span>
           )}
         </button>
@@ -541,7 +543,7 @@ export default function Bolao() {
               <p className="text-xs mt-2 text-gray-600">Os palpites fecham 1h antes de cada jogo.</p>
             </div>
           ) : (
-            <GrupoRodadas jogos={abertas} palpites={palpites} aberto={true} onSalvar={recarregarPalpites} onDeletar={recarregarPalpites} />
+            <GrupoRodadas jogos={abertasSemHoje} palpites={palpites} aberto={true} onSalvar={recarregarPalpites} onDeletar={recarregarPalpites} />
           )}
         </div>
       )}
