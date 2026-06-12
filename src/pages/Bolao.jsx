@@ -382,6 +382,7 @@ export default function Bolao() {
 
   const abertas = partidas.filter(p => isAberta(p))
   const encerradas = partidas.filter(p => !isAberta(p))
+  const jogosHoje = abertas.filter(p => isHoje(p.dataHora))
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
@@ -477,6 +478,24 @@ export default function Bolao() {
           </div>
         )}
       </div>
+
+      {/* JOGOS NAS PRÓXIMAS 24H */}
+      {jogosHoje.length > 0 && (
+        <div className="bg-gray-900/50 rounded-xl border border-yellow-500/20 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
+            <h2 className="text-sm font-bold text-yellow-400">Palpite agora — nas próximas 24h</h2>
+            <span className="text-xs text-gray-500">({jogosHoje.length} {jogosHoje.length === 1 ? 'jogo' : 'jogos'})</span>
+          </div>
+          <GrupoRodadas
+            jogos={jogosHoje}
+            palpites={palpites}
+            aberto={true}
+            onSalvar={recarregarPalpites}
+            onDeletar={recarregarPalpites}
+          />
+        </div>
+      )}
 
       {/* ABAS */}
       <div className="flex gap-2 border-b border-gray-800 pb-0">

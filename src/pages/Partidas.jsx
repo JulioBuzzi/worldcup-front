@@ -50,7 +50,7 @@ function PartidaCard({ partida }) {
         <div className="text-center min-w-[90px]">
           {partida.encerrada ? (
             <div className="text-2xl font-bold text-yellow-400">
-              {partida.golsCasa} — {partida.golsVisitante}
+              {partida.golsCasa} X {partida.golsVisitante}
             </div>
           ) : (
             <div className="text-gray-500 text-lg font-bold">VS</div>
