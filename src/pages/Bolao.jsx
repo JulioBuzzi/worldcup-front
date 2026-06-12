@@ -29,6 +29,12 @@ function isAberta(partida) {
   return !partida.encerrada && Date.now() < deadline
 }
 
+function isHoje(iso) {
+  const jogo = new Date(iso).getTime()
+  const agora = Date.now()
+  return jogo - agora < 24 * 60 * 60 * 1000 && jogo > agora - 3 * 60 * 60 * 1000
+}
+
 // Card para partidas ABERTAS — com inputs editáveis
 function PalpiteCardAberto({ partida, palpite, onSalvar, onDeletar }) {
   const [gols, setGols] = useState({
@@ -301,18 +307,26 @@ export default function Bolao() {
   // Carrega tudo — só na inicialização
   const loadData = async () => {
     try {
-      const [pRes, bRes, partRes, selRes] = await Promise.all([
+      // 1. Carrega dados essenciais primeiro (palpites, bonus, selecoes + jogos abertos)
+      const [pRes, bRes, selRes, abertasRes] = await Promise.all([
         api.get('/palpites/meus'),
         api.get('/bonus/meu').catch(() => ({ data: null })),
-        api.get('/partidas'),
-        api.get('/selecoes')
+        api.get('/selecoes'),
+        api.get('/partidas/abertas')
       ])
       setPalpites(pRes.data)
-      setPartidas(partRes.data)
       setSelecoes(selRes.data)
       aplicarBonus(bRes)
+      // Usa as abertas como base inicial
+      setPartidas(abertasRes.data)
     } catch (err) { console.error(err) }
     finally { setLoading(false) }
+
+    // 2. Depois carrega TODAS as partidas em background (para a aba encerrados)
+    try {
+      const { data } = await api.get('/partidas')
+      setPartidas(data)
+    } catch (err) { console.error(err) }
   }
 
   // Carrega só palpites — após salvar palpite
