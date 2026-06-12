@@ -298,6 +298,7 @@ export default function Bolao() {
   const [abaAtiva, setAbaAtiva] = useState('abertas')
   const bonusAberto = Date.now() < DEADLINE_BONUS
 
+  // Carrega tudo — só na inicialização
   const loadData = async () => {
     try {
       const [pRes, bRes, partRes, selRes] = await Promise.all([
@@ -309,19 +310,39 @@ export default function Bolao() {
       setPalpites(pRes.data)
       setPartidas(partRes.data)
       setSelecoes(selRes.data)
-      if (bRes.data && bRes.status !== 204) {
-        setTemBonus(true)
-        setBonusForm({
-          campeao: bRes.data.campeao || '',
-          neymarGol: bRes.data.neymarGol != null ? String(bRes.data.neymarGol) : '',
-          artilheiro: bRes.data.artilheiro || '',
-          brasilFase: bRes.data.brasilFase || ''
-        })
-      } else {
-        setTemBonus(false)
-      }
+      aplicarBonus(bRes)
     } catch (err) { console.error(err) }
     finally { setLoading(false) }
+  }
+
+  // Carrega só palpites — após salvar palpite
+  const recarregarPalpites = async () => {
+    try {
+      const { data } = await api.get('/palpites/meus')
+      setPalpites(data)
+    } catch (err) { console.error(err) }
+  }
+
+  // Carrega só bônus — após salvar bônus
+  const recarregarBonus = async () => {
+    try {
+      const bRes = await api.get('/bonus/meu').catch(() => ({ data: null }))
+      aplicarBonus(bRes)
+    } catch (err) { console.error(err) }
+  }
+
+  const aplicarBonus = (bRes) => {
+    if (bRes?.data && bRes.status !== 204) {
+      setTemBonus(true)
+      setBonusForm({
+        campeao: bRes.data.campeao || '',
+        neymarGol: bRes.data.neymarGol != null ? String(bRes.data.neymarGol) : '',
+        artilheiro: bRes.data.artilheiro || '',
+        brasilFase: bRes.data.brasilFase || ''
+      })
+    } else {
+      setTemBonus(false)
+    }
   }
 
   useEffect(() => { loadData() }, [])
@@ -337,7 +358,7 @@ export default function Bolao() {
       })
       setTemBonus(true)
       setBonusMsg('✅ Bônus salvo!')
-      loadData()
+      recarregarBonus()
     } catch { setBonusMsg('❌ Erro ao salvar') }
     finally {
       setSavingBonus(false)
@@ -404,7 +425,7 @@ export default function Bolao() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca pelo menos 1 gol na Copa? (tempo regulamentar)</label>
+                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol na Copa?</label>
                 <select value={bonusForm.neymarGol} onChange={e => setBonusForm({ ...bonusForm, neymarGol: e.target.value })}
                   disabled={!bonusAberto}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
@@ -487,7 +508,7 @@ export default function Bolao() {
               <p className="text-xs mt-2 text-gray-600">Os palpites fecham 1h antes de cada jogo.</p>
             </div>
           ) : (
-            <GrupoRodadas jogos={abertas} palpites={palpites} aberto={true} onSalvar={loadData} onDeletar={loadData} />
+            <GrupoRodadas jogos={abertas} palpites={palpites} aberto={true} onSalvar={recarregarPalpites} onDeletar={recarregarPalpites} />
           )}
         </div>
       )}
