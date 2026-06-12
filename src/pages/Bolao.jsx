@@ -404,7 +404,7 @@ export default function Bolao() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca gol na Copa?</label>
+                <label className="block text-sm text-gray-400 mb-1.5">⚽ Neymar marca pelo menos 1 gol na Copa? (tempo regulamentar)</label>
                 <select value={bonusForm.neymarGol} onChange={e => setBonusForm({ ...bonusForm, neymarGol: e.target.value })}
                   disabled={!bonusAberto}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 disabled:opacity-40">
