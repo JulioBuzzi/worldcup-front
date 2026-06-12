@@ -88,7 +88,7 @@ export default function Ranking() {
               <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-gray-800 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 <div className="col-span-1 text-center">#</div>
                 <div className="col-span-5">Jogador</div>
-                <div className="col-span-2 text-center">Partidas</div>
+                <div className="col-span-2 text-center">Pontos</div>
                 <div className="col-span-2 text-center">Bônus</div>
                 <div className="col-span-2 text-center">Total</div>
               </div>
