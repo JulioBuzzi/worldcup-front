@@ -51,7 +51,6 @@ function calcularClassificacao(selecoes, partidas) {
   )
 }
 
-// Calcula os 8 melhores terceiros entre todos os grupos
 function calcularMelhoresTerceiros(todosGrupos, todasPartidas) {
   const terceiros = []
   Object.entries(todosGrupos).forEach(([grupo, selecoes]) => {
@@ -60,7 +59,6 @@ function calcularMelhoresTerceiros(todosGrupos, todasPartidas) {
       return ids.includes(p.selecaoCasa?.id) || ids.includes(p.selecaoVisitante?.id)
     })
     const class_ = calcularClassificacao(selecoes, partidasGrupo)
-    // Só considera terceiro se o grupo terminou (todas as partidas encerradas)
     const totalPartidas = partidasGrupo.length
     const encerradas = partidasGrupo.filter(p => p.encerrada).length
     if (class_.length >= 3 && totalPartidas > 0) {
@@ -71,11 +69,10 @@ function calcularMelhoresTerceiros(todosGrupos, todasPartidas) {
       })
     }
   })
-  // Ordenar por pts, sg, gp — pegar os 8 melhores
   return terceiros
     .sort((a, b) => b.pts - a.pts || b.sg - a.sg || b.gp - a.gp)
     .slice(0, 8)
-} 
+}
 
 export default function Grupos() {
   const [grupos, setGrupos] = useState({})
@@ -102,7 +99,7 @@ export default function Grupos() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Grupos </h1>
+        <h1 className="text-3xl font-bold text-white">Grupos</h1>
         <p className="text-gray-400 mt-1">48 seleções</p>
       </div>
 
@@ -118,18 +115,15 @@ export default function Grupos() {
 
           return (
             <div key={grupo} className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-              {/* Header */}
               <div className="bg-yellow-500 px-4 py-2 flex items-center justify-between">
                 <h2 className="font-bold text-gray-900 text-sm">GRUPO {grupo}</h2>
                 {total > 0 && (
-                  <span className="text-xs text-gray-700 font-medium">
-                    {encerradas}/{total} jogos
-                  </span>
+                  <span className="text-xs text-gray-700 font-medium">{encerradas}/{total} jogos</span>
                 )}
               </div>
 
-              {/* Tabela */}
               <div className="px-3 py-2">
+                {/* Header da tabela do grupo */}
                 <div className="grid grid-cols-12 text-xs text-gray-600 font-semibold mb-1 px-1">
                   <div className="col-span-5">Seleção</div>
                   <div className="col-span-2 text-center font-bold">PTS</div>
@@ -138,38 +132,30 @@ export default function Grupos() {
                   <div className="col-span-1 text-center">E</div>
                   <div className="col-span-1 text-center">D</div>
                   <div className="col-span-1 text-center">SG</div>
-                  
                 </div>
 
                 {classificacao.map((c, idx) => {
                   const classificado1ou2 = idx < 2 && encerradas > 0
                   const terceiro = idx === 2
                   const melhorTerceiro = terceiro && idsMelhoresTerceiros.has(c.selecao.id)
-
-                  // Cor da bolinha de status
                   const statusColor =
-                    classificado1ou2  ? 'bg-green-500' :
-                    melhorTerceiro    ? 'bg-blue-400' :
+                    classificado1ou2 ? 'bg-green-500' :
+                    melhorTerceiro   ? 'bg-blue-400' :
                     terceiro && encerradas > 0 ? 'bg-gray-600' : ''
 
                   return (
-                    <div
-                      key={c.selecao.id}
+                    <div key={c.selecao.id}
                       className={`grid grid-cols-12 items-center py-1.5 px-1 rounded text-xs transition-colors ${
                         classificado1ou2 ? 'bg-green-900/20' :
                         melhorTerceiro   ? 'bg-blue-900/15' : ''
                       }`}
                     >
                       <div className="col-span-5 flex items-center gap-1.5">
-                        <div className="flex items-center gap-1 w-5">
-                          <span className={`text-xs font-bold ${
-                            classificado1ou2 ? 'text-green-400' :
-                            melhorTerceiro   ? 'text-blue-400' : 'text-gray-700'
-                          }`}>{idx + 1}</span>
-                        </div>
-                        {statusColor && (
-                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusColor}`} />
-                        )}
+                        <span className={`text-xs font-bold w-3 ${
+                          classificado1ou2 ? 'text-green-400' :
+                          melhorTerceiro   ? 'text-blue-400' : 'text-gray-700'
+                        }`}>{idx + 1}</span>
+                        {statusColor && <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusColor}`} />}
                         <Bandeira codigo={c.selecao.codigoFifa} size={18} />
                         <span className="text-white truncate">{c.selecao.nome}</span>
                       </div>
@@ -207,7 +193,7 @@ export default function Grupos() {
         <span className="text-gray-600">· Atualiza conforme jogos são encerrados</span>
       </div>
 
-      {/* Tabela dos melhores terceiros */}
+      {/* Tabela melhores terceiros */}
       {melhoresTerceiros.length > 0 && (
         <div className="mt-8">
           <h2 className="text-lg font-bold text-white mb-3">
@@ -217,18 +203,18 @@ export default function Grupos() {
             </span>
           </h2>
           <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+            {/* Header */}
             <div className="grid grid-cols-12 text-xs text-gray-600 font-semibold px-4 py-2 border-b border-gray-800">
-              <div className="col-span-1 text-center">Pos</div>
+              <div className="col-span-1 text-center">#</div>
               <div className="col-span-4">Seleção</div>
-              <div className="col-span-2 text-center font-bold">PTS</div>
               <div className="col-span-1 text-center">Grp</div>
+              <div className="col-span-2 text-center font-bold">PTS</div>
               <div className="col-span-1 text-center">J</div>
               <div className="col-span-1 text-center">V</div>
               <div className="col-span-1 text-center">E</div>
               <div className="col-span-1 text-center">D</div>
-              <div className="col-span-1 text-center">SG</div>
-              
             </div>
+
             {melhoresTerceiros.map((t, idx) => (
               <div key={t.selecao.id}
                 className="grid grid-cols-12 items-center px-4 py-2.5 border-b border-gray-800/50 last:border-0 bg-blue-900/10 text-xs">
@@ -237,20 +223,15 @@ export default function Grupos() {
                   <Bandeira codigo={t.selecao.codigoFifa} size={18} />
                   <span className="text-white font-medium truncate">{t.selecao.nome}</span>
                 </div>
-                <div className="col-span-1 text-center">
-                  <div className="col-span-2 text-center font-bold text-yellow-400">{t.pts}</div>
-                  <span className="text-yellow-500 font-bold">{t.grupo}</span>
-                </div>
+                <div className="col-span-1 text-center text-yellow-500 font-bold">{t.grupo}</div>
+                <div className="col-span-2 text-center font-bold text-yellow-400">{t.pts}</div>
                 <div className="col-span-1 text-center text-gray-400">{t.j}</div>
                 <div className="col-span-1 text-center text-gray-400">{t.v}</div>
                 <div className="col-span-1 text-center text-gray-400">{t.e}</div>
                 <div className="col-span-1 text-center text-gray-400">{t.d}</div>
-                <div className={`col-span-1 text-center ${t.sg > 0 ? 'text-green-400' : t.sg < 0 ? 'text-red-400' : 'text-gray-500'}`}>
-                  {t.sg > 0 ? `+${t.sg}` : t.sg}
-                </div>
-                
               </div>
             ))}
+
             {melhoresTerceiros.length < 8 && (
               <div className="px-4 py-2 text-xs text-gray-600 italic text-center">
                 {8 - melhoresTerceiros.length} vaga(s) ainda não definida(s)
