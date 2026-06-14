@@ -191,7 +191,7 @@ export default function Ranking() {
                   <p className="text-sm text-gray-500 text-center py-6">Nenhuma partida encerrada ainda.</p>
                 ) : (
                   <div className="space-y-2">
-                    {partidasFechadas.map(p => {
+                    {partidasFechadas.reverse().map(p => {
                       const palpite = palpitesVendo.find(x => x.partida?.id === p.id)
                       const ptClass = palpite?.pontosGanhos != null
                         ? palpite.pontosGanhos === 10 ? 'border-green-700/40 bg-green-900/10'
