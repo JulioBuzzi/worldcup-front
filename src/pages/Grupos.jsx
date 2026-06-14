@@ -132,12 +132,13 @@ export default function Grupos() {
               <div className="px-3 py-2">
                 <div className="grid grid-cols-12 text-xs text-gray-600 font-semibold mb-1 px-1">
                   <div className="col-span-5">Seleção</div>
+                  <div className="col-span-2 text-center font-bold">PTS</div>
                   <div className="col-span-1 text-center">J</div>
                   <div className="col-span-1 text-center">V</div>
                   <div className="col-span-1 text-center">E</div>
                   <div className="col-span-1 text-center">D</div>
                   <div className="col-span-1 text-center">SG</div>
-                  <div className="col-span-2 text-center font-bold">PTS</div>
+                  
                 </div>
 
                 {classificacao.map((c, idx) => {
