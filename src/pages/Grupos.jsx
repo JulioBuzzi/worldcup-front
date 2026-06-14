@@ -172,6 +172,7 @@ export default function Grupos() {
                         <Bandeira codigo={c.selecao.codigoFifa} size={18} />
                         <span className="text-white truncate">{c.selecao.nome}</span>
                       </div>
+                      <div className="col-span-2 text-center font-bold text-yellow-400">{c.pts}</div>
                       <div className="col-span-1 text-center text-gray-400">{c.j}</div>
                       <div className="col-span-1 text-center text-gray-400">{c.v}</div>
                       <div className="col-span-1 text-center text-gray-400">{c.e}</div>
@@ -179,7 +180,6 @@ export default function Grupos() {
                       <div className={`col-span-1 text-center ${c.sg > 0 ? 'text-green-400' : c.sg < 0 ? 'text-red-400' : 'text-gray-500'}`}>
                         {c.sg > 0 ? `+${c.sg}` : c.sg}
                       </div>
-                      <div className="col-span-2 text-center font-bold text-yellow-400">{c.pts}</div>
                     </div>
                   )
                 })}
