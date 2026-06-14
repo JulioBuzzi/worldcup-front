@@ -486,7 +486,7 @@ export default function Bolao() {
         <div className="bg-gray-900/50 rounded-xl border border-yellow-500/20 p-5">
           <div className="flex items-center gap-2 mb-4">
             <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse inline-block" />
-            <h2 className="text-sm font-bold text-yellow-400">Palpite partidas próximas</h2>
+            <h2 className="text-sm font-bold text-yellow-400">Palpite agora — nas próximas 24h</h2>
             <span className="text-xs text-gray-500">({jogosHoje.length} {jogosHoje.length === 1 ? 'jogo' : 'jogos'})</span>
           </div>
           <GrupoRodadas
@@ -556,7 +556,7 @@ export default function Bolao() {
               <p>Nenhuma partida encerrada ainda.</p>
             </div>
           ) : (
-            <GrupoRodadas jogos={encerradas} palpites={palpites} aberto={false} />
+            <GrupoRodadas jogos={[...encerradas].reverse()} palpites={palpites} aberto={false} />
           )}
         </div>
       )}
