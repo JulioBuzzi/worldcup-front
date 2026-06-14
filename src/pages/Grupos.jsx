@@ -220,13 +220,14 @@ export default function Grupos() {
             <div className="grid grid-cols-12 text-xs text-gray-600 font-semibold px-4 py-2 border-b border-gray-800">
               <div className="col-span-1 text-center">Pos</div>
               <div className="col-span-4">Seleção</div>
+              <div className="col-span-2 text-center font-bold">PTS</div>
               <div className="col-span-1 text-center">Grp</div>
               <div className="col-span-1 text-center">J</div>
               <div className="col-span-1 text-center">V</div>
               <div className="col-span-1 text-center">E</div>
               <div className="col-span-1 text-center">D</div>
               <div className="col-span-1 text-center">SG</div>
-              <div className="col-span-2 text-center font-bold">PTS</div>
+              
             </div>
             {melhoresTerceiros.map((t, idx) => (
               <div key={t.selecao.id}
@@ -237,6 +238,7 @@ export default function Grupos() {
                   <span className="text-white font-medium truncate">{t.selecao.nome}</span>
                 </div>
                 <div className="col-span-1 text-center">
+                  <div className="col-span-2 text-center font-bold text-yellow-400">{t.pts}</div>
                   <span className="text-yellow-500 font-bold">{t.grupo}</span>
                 </div>
                 <div className="col-span-1 text-center text-gray-400">{t.j}</div>
@@ -246,7 +248,7 @@ export default function Grupos() {
                 <div className={`col-span-1 text-center ${t.sg > 0 ? 'text-green-400' : t.sg < 0 ? 'text-red-400' : 'text-gray-500'}`}>
                   {t.sg > 0 ? `+${t.sg}` : t.sg}
                 </div>
-                <div className="col-span-2 text-center font-bold text-yellow-400">{t.pts}</div>
+                
               </div>
             ))}
             {melhoresTerceiros.length < 8 && (
