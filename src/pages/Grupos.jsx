@@ -56,7 +56,7 @@ function calcularMelhoresTerceiros(todosGrupos, todasPartidas) {
   Object.entries(todosGrupos).forEach(([grupo, selecoes]) => {
     const partidasGrupo = todasPartidas.filter(p => {
       const ids = selecoes.map(s => s.id)
-      return ids.includes(p.selecaoCasa?.id) || ids.includes(p.selecaoVisitante?.id)
+      return p.fase === 'GRUPOS' && (ids.includes(p.selecaoCasa?.id) || ids.includes(p.selecaoVisitante?.id))
     })
     const class_ = calcularClassificacao(selecoes, partidasGrupo)
     if (class_.length >= 3 && partidasGrupo.length > 0) {
@@ -74,21 +74,19 @@ function SlotTime({ selecao, gols, venceu }) {
     venceu === false ? 'border-gray-700/30 opacity-40' :
     'bg-gray-800 border-gray-700'
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded border ${bg} w-[140px]`}>
+    <div className={`flex items-center gap-1 px-1.5 py-1 rounded border ${bg} w-[52px]`}
+         title={selecao?.nome || 'A definir'}>
       {selecao ? (
         <>
-          <Bandeira codigo={selecao.codigoFifa} size={14} />
-          <span className={`text-xs truncate flex-1 ${venceu ? 'text-white font-semibold' : 'text-gray-300'}`}>
-            {selecao.nome}
-          </span>
+          <Bandeira codigo={selecao.codigoFifa} size={18} />
           {gols != null && (
-            <span className={`text-xs font-bold shrink-0 ml-1 ${venceu ? 'text-green-400' : 'text-gray-500'}`}>
+            <span className={`text-xs font-bold shrink-0 ${venceu ? 'text-green-400' : 'text-gray-500'}`}>
               {gols}
             </span>
           )}
         </>
       ) : (
-        <span className="text-xs text-gray-600 italic">A definir</span>
+        <div className="w-[18px] h-[12px] bg-gray-700 rounded-sm opacity-40" />
       )}
     </div>
   )
@@ -326,7 +324,7 @@ export default function Grupos() {
             {sortedGrupos.map(([grupo, selecoes]) => {
               const partidasGrupo = partidas.filter(p => {
                 const ids = selecoes.map(s => s.id)
-                return ids.includes(p.selecaoCasa?.id) || ids.includes(p.selecaoVisitante?.id)
+                return p.fase === 'GRUPOS' && (ids.includes(p.selecaoCasa?.id) || ids.includes(p.selecaoVisitante?.id))
               })
               const classificacao = calcularClassificacao(selecoes, partidasGrupo)
               const encerradas = partidasGrupo.filter(p => p.encerrada).length
