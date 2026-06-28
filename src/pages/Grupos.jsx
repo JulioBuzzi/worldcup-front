@@ -128,19 +128,45 @@ function Coluna({ jogos, gap }) {
   )
 }
 
-function Chaveamento({ partidas }) {
-  const fase = (f) => partidas
-    .filter(p => p.fase === f)
-    .sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora))
+// Ordem oficial FIFA do chaveamento
+const ORDEM_ESQ = ['GER','FRA','RSA','NED','POR','ESP','USA','BEL']
+const ORDEM_DIR = ['BRA','CIV','MEX','ENG','ARG','AUS','SUI','COL']
+// Casa de cada jogo (para identificar)
+const PARES_ESQ = [
+  ['GER','PAR'],['FRA','SWE'],['RSA','CAN'],['NED','MAR'],
+  ['POR','CRO'],['ESP','AUT'],['USA','BIH'],['BEL','SEN']
+]
+const PARES_DIR = [
+  ['BRA','JPN'],['CIV','NOR'],['MEX','ECU'],['ENG','COD'],
+  ['ARG','CPV'],['AUS','EGY'],['SUI','ALG'],['COL','GHA']
+]
 
-  const r16  = fase('DEZASSEIS')
+function encontrarJogo(partidas, casa, visitante) {
+  return partidas.find(p =>
+    p.selecaoCasa?.codigoFifa === casa && p.selecaoVisitante?.codigoFifa === visitante
+  ) || null
+}
+
+function Chaveamento({ partidas }) {
+  const fase = (f) => partidas.filter(p => p.fase === f)
+
+  const r16all = fase('DEZASSEIS')
   const of   = fase('OITAVAS')
   const qf   = fase('QUARTAS')
   const sf   = fase('SEMI')
   const fin  = fase('FINAL')
   const ter  = fase('TERCEIRO_LUGAR')
 
-  const temMataMata = r16.length > 0 || of.length > 0 || qf.length > 0
+  // Ordenar R16 pela ordem FIFA
+  const r16esq = PARES_ESQ.map(([c, v]) => encontrarJogo(r16all, c, v))
+  const r16dir = PARES_DIR.map(([c, v]) => encontrarJogo(r16all, c, v))
+  const r16 = [...r16esq, ...r16dir]
+
+  const of2 = of.sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora))
+  const qf2 = qf.sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora))
+  const sf2 = sf.sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora))
+
+  const temMataMata = r16all.length > 0 || of.length > 0 || qf.length > 0
 
   if (!temMataMata) {
     return (
